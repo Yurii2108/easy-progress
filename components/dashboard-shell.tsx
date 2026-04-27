@@ -9,53 +9,90 @@ type Task = {
   completed: boolean;
 };
 
-export function DashboardShell() {
+type DashboardShellProps = {
+  initialPlan?: unknown;
+  sharedView?: boolean;
+};
+
+export function DashboardShell({ initialPlan, sharedView }: DashboardShellProps) {
+  void initialPlan;
+  void sharedView;
+
   const supabase = createClient();
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // загрузка задач
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    async function fetchTasks() {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("id, title, completed")
+        .order("created_at", { ascending: true });
 
-  async function fetchTasks() {
-    const { data, error } = await supabase.from("tasks").select("*");
+      if (error) {
+        console.error("Error loading tasks:", error.message);
+        setLoading(false);
+        return;
+      }
 
-    if (!error && data) {
-      setTasks(data);
+      setTasks(data ?? []);
+      setLoading(false);
     }
 
-    setLoading(false);
-  }
+    fetchTasks();
+  }, [supabase]);
 
-  // добавление задачи
   async function addTask() {
     const title = prompt("Введите задачу:");
+
     if (!title) return;
 
     const { data, error } = await supabase
       .from("tasks")
-      .insert([{ title, completed: false }])
-      .select();
+      .insert([
+        {
+          title,
+          completed: false,
+          priority: "normal",
+        },
+      ])
+      .select("id, title, completed")
+      .single();
 
-    if (!error && data) {
-      setTasks((prev) => [...prev, ...data]);
+    if (error) {
+      alert("Ошибка: " + error.message);
+      return;
+    }
+
+    if (data) {
+      setTasks((prev) => [...prev, data]);
     }
   }
 
-  // переключение выполнения
   async function toggleTask(task: Task) {
-    await supabase
+    const { error } = await supabase
       .from("tasks")
       .update({ completed: !task.completed })
       .eq("id", task.id);
 
-    fetchTasks();
+    if (error) {
+      alert("Ошибка: " + error.message);
+      return;
+    }
+
+    setTasks((prev) =>
+      prev.map((item) =>
+        item.id === task.id
+          ? { ...item, completed: !item.completed }
+          : item
+      )
+    );
   }
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return <div style={{ padding: 20 }}>Loading...</div>;
+  }
 
   return (
     <div style={{ padding: 20 }}>
@@ -70,6 +107,7 @@ export function DashboardShell() {
             onClick={() => toggleTask(task)}
             style={{
               cursor: "pointer",
+              marginTop: 10,
               textDecoration: task.completed ? "line-through" : "none",
             }}
           >
