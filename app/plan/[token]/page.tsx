@@ -1,4 +1,3 @@
-import { DashboardShell } from "../../../components/dashboard-shell";
 import { demoPlan } from "../../../lib/demo-data";
 
 export default async function SharedPlanPage({ params }: { params: Promise<{ token: string }> }) {
