@@ -97,3 +97,4 @@ Each plan can be:
 - Vercel Git deployments: https://vercel.com/docs/deployments
 - Supabase Auth with Next.js: https://supabase.com/docs/guides/auth/quickstarts/nextjs
 - Supabase Row Level Security: https://supabase.com/docs/guides/database/postgres/row-level-security
+Deployment trigger update.
